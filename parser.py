@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import os
+import re
 import MySQLdb
 from optparse import OptionParser
 
@@ -9,7 +11,6 @@ try:
     parser.add_option('-p', '--password', dest = 'password')
     parser.add_option('-d', '--db',       dest = 'db')
     (options, args) = parser.parse_args()
-
 
     if options.user:
         user = options.user
@@ -29,13 +30,27 @@ try:
     else:
         server = 'localhost'
 
-    db = MySQLdb.connect(host = server, user = user, passwd = password, db = db)
-
 except Exception as exception:
     print 'Error:', exception, "\nThe End\n"
     exit()
 
+
+db = MySQLdb.connect(host = server, user = user, passwd = password, db = db)
 cur = db.cursor()
+
+dirname = 'mysql'
+for item in os.listdir(dirname) :
+    try:
+        f = open(os.path.join(dirname, item), 'r')
+        content = f.read()
+        pattern = re.compile('INSERT INTO `(.+)` VALUES', re.IGNORECASE)
+        match = pattern.match(content)
+        if match:
+            table_name =  match.group(1)
+            cur.execute("RENAME TABLE " + table_name +" TO " + table_name + "_back;")
+            cur.execute("CREATE TABLE " + table_name +" LIKE " + table_name + "_back;")
+    except IOError as e:
+        pass
 
 cur.execute("SELECT * FROM `table`")
 
