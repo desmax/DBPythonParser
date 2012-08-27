@@ -2,6 +2,7 @@
 import os
 import re
 import MySQLdb
+import codecs
 from optparse import OptionParser
 
 try:
@@ -40,17 +41,15 @@ cur = db.cursor()
 dirname = 'mysql'
 for item in os.listdir(dirname) :
     try:
-        f = open(os.path.join(dirname, item), 'r')
+        f = codecs.open(os.path.join(dirname, item), 'r', 'utf-8')
         content = f.read()
         pattern = re.compile('INSERT INTO `(.+)` VALUES', re.IGNORECASE)
         match = pattern.match(content)
         if match:
             table_name =  match.group(1)
             try:
-                cur.execute("SET NAMES UTF8;")
-                cur.execute("RENAME TABLE " + table_name +" TO " + table_name + "_back;")
-                cur.execute("CREATE TABLE " + table_name +" LIKE " + table_name + "_back;")
-                cur.execute(content)
+                cur.execute("DROP TABLE " + table_name + ";")
+                cur.execute("RENAME TABLE " + table_name + "_back TO " + table_name + ";")
             except Exception as exception:
                 pass
     except IOError as e:
